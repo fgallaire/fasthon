@@ -19,7 +19,7 @@ wasthonp **is** CPython's parser, so by construction it can't lag the grammar or
 invent quirks. Concretely, against the vendored Brython:
 
 ### 1. Correctness — exact CPython 3.14 grammar
-- **Full CPython 3.14 stdlib round-trip** (`node validate2.js`, 1851 files):
+- **Full CPython 3.14 stdlib round-trip** (`node tests/validate2.js`, 1851 files):
   **1830 parse + build + codegen with 0 wasthonp crashes**; **1147 byte-identical**
   to Brython's own codegen, the rest cosmetic (position/pretty-print) diffs.
 - **Files Brython's hand-written parser crashes on, wasthonp handles** (`node
@@ -47,7 +47,7 @@ including tokenizer errors (`invalid non-printable character U+0017`,
 parity with Brython.
 
 ### 3. Performance — ~3.5–6× faster parse, ~1.5× end-to-end
-Two honest numbers, measured (`node bench.js`, `node breakdown.js`):
+Two honest numbers, measured (`node tests/bench.js`):
 - **Parse-only** — the parser itself, vs Brython's JS parser (WASM boundary cost
   included): **~3.5–5× on typical code, up to ~6× on numeric-heavy code**
   (`_pydecimal.py` 5.9×, `argparse.py` 4.5×, `typing.py` 3.3×), ~3× in-browser.
@@ -107,9 +107,9 @@ node and the browser.
 2. [x] **Parse → `mod_ty`** — real AST, no object layer / eval / runtime.
 3. [x] **Serialize** — `mod_ty` → JSON (`shims/ast_dump.c`).
 4. [x] **JS rebuild → codegen** — full 3.14 grammar (def/class/async/match/try/
-       f-strings/PEP 695…), codegen logic-identical to Brython (`node m3b_stmt.js`).
-5. [x] **Bench** — 3.5–6× faster parse-only (`node bench.js`).
-6. [x] **Execute end-to-end** — 7/7 programs run correctly (`node m3c_exec.js`).
+       f-strings/PEP 695…), codegen logic-identical to Brython (`node tests/m3b_stmt.js`).
+5. [x] **Bench** — 3.5–6× faster parse-only (`node tests/bench.js`).
+6. [x] **Execute end-to-end** — 7/7 programs run correctly (`node tests/m3c_exec.js`).
 7. [x] **Browser** — `loader/wasthonp.html` (run real Python on wasthonp + in-page
        bench); also standalone `web/index.html`.
 8. [x] **Faithful errors (v2)** — exact CPython `SyntaxError` message+position
@@ -129,9 +129,9 @@ Reuses the wasthon checkout's emsdk + CPython 3.14 source under `../external`;
 the cross `pyconfig.h` is committed (`cpy-build/`). Then:
 
 ```sh
-node bench.js         # parse-speed vs Brython
-node validate2.js     # full-stdlib round-trip
-node superiority.js   # files Brython's parser chokes on
-node m3c_exec.js      # parse → $B.ast → exec, end to end
+node tests/bench.js         # parse-speed vs Brython
+node tests/validate2.js     # full-stdlib round-trip
+node tests/superiority.js   # files Brython's parser chokes on
+node tests/m3c_exec.js      # parse → $B.ast → exec, end to end
 ```
 Browser demo: serve the repo root and open `/loader/wasthonp.html`.

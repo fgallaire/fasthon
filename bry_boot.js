@@ -22,5 +22,17 @@ if (typeof globalThis.document === 'undefined') {
     location: globalThis.location,
   };
 }
-require(require('path').join(__dirname, '../loader/brython/brython.js'));
+// Brython comes from the wasthon checkout, which ships it already built:
+// $BRYTHON_JS wins, then ../loader/brython (what the CI stages), then
+// ../wasthon4/loader/brython (a dev checkout next door).
+const _p = require('path'), _fs = require('fs');
+const _bry = [process.env.BRYTHON_JS,
+              _p.join(__dirname, '../loader/brython/brython.js'),
+              _p.join(__dirname, '../wasthon4/loader/brython/brython.js')]
+    .find(f => f && _fs.existsSync(f));
+if (! _bry) {
+    throw new Error('brython.js not found: set BRYTHON_JS, or put the wasthon ' +
+                    'checkout next to this repo');
+}
+require(_bry);
 module.exports = globalThis.__BRYTHON__;

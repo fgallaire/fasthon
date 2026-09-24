@@ -2,12 +2,18 @@
  * check whether wasthonp parses it (= wasthonp handles 3.14 grammar Brython's
  * hand-written parser chokes on). */
 const fs=require("fs"), path=require("path");
-const $B=require("./bry_boot.js"); globalThis.$B=$B; globalThis._b_=$B.builtins;
-const createWasthonp=require("./build/wasthonp_mod.js");
-const WP=require("./wasthonp.js").bind($B);
+const $B=require("../bry_boot.js"); globalThis.$B=$B; globalThis._b_=$B.builtins;
+const createWasthonp=require("../build/wasthonp_mod.js");
+const WP=require("../wasthonp.js").bind($B);
 const { decodePySource } = WP;
 
-const LIB=require("path").join(__dirname,"../external/Python-3.14.6/Lib");
+const LIB = (() => {
+    const p = require("path"), fs = require("fs");
+    return [process.env.CPYTHON_LIB,
+            p.join(__dirname, "../../external/Python-3.14.6/Lib"),
+            p.join(__dirname, "../../wasthon4/external/Python-3.14.6/Lib")]
+        .find(d => d && fs.existsSync(d));
+})();
 const files=[]; (function w(d){for(const e of fs.readdirSync(d,{withFileTypes:true})){const p=path.join(d,e.name); if(e.isDirectory()){if(e.name!=="__pycache__")w(p);} else if(e.name.endsWith(".py"))files.push(p);}})(LIB); files.sort();
 
 createWasthonp().then(M=>{

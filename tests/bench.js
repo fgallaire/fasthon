@@ -1,7 +1,7 @@
 /* parse-only benchmark: wasthonp (WASM CPython parser) vs Brython's JS parser. */
-const $B = require("./bry_boot.js");
+const $B = require("../bry_boot.js");
 globalThis.$B = $B; globalThis._b_ = $B.builtins;
-const createWasthonp = require("./build/wasthonp_mod.js");
+const createWasthonp = require("../build/wasthonp_mod.js");
 
 // a realistic-ish module body (statements + expressions)
 const SRC = `

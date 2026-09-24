@@ -1,9 +1,9 @@
 /* wasthonp END-TO-END EXECUTION: parse with wasthonp (WASM) → $B.ast →
  * Brython's exec → read the result. Proves programs actually RUN correctly via
  * wasthonp's parser, not just that the codegen text matches. */
-const $B = require("./bry_boot.js");
+const $B = require("../bry_boot.js");
 globalThis.$B = $B; globalThis._b_ = $B.builtins;
-const createWasthonp = require("./build/wasthonp_mod.js");
+const createWasthonp = require("../build/wasthonp_mod.js");
 const ast = $B.ast;
 
 // 1) decode a single Python string literal → its REAL runtime value

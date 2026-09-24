@@ -14,6 +14,9 @@
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
 W4="$(cd "${REPO}/.." && pwd)"
+# emsdk and the CPython source come from the wasthon checkout: next to this
+# repo (what the CI stages), or in ../wasthon4 (a dev checkout next door).
+[ -d "${W4}/external" ] || [ ! -d "${W4}/wasthon4/external" ] || W4="${W4}/wasthon4"
 CPY="${CPYTHON_SRC:-${W4}/external/Python-3.14.6}"
 EMSDK="${EMSDK:-${W4}/external/emsdk}"
 OUT="${REPO}/build"

@@ -1,10 +1,10 @@
 /* Round-trip a REAL stdlib file through wasthonp → $B.ast → Brython codegen,
  * compared to Brython's own parser+codegen. The ultimate scale test. */
 const fs = require("fs");
-const $B = require("./bry_boot.js");
+const $B = require("../bry_boot.js");
 globalThis.$B = $B; globalThis._b_ = $B.builtins;
-const createWasthonp = require("./build/wasthonp_mod.js");
-const WP = require("./wasthonp.js").bind($B);
+const createWasthonp = require("../build/wasthonp_mod.js");
+const WP = require("../wasthonp.js").bind($B);
 const { build } = WP;
 
 function compile(mod,src){ const fn="<string>",fu=$B.future_features(mod,fn),st=$B._PySymtable_Build(mod,fn,fu); return $B.js_from_root({ast:mod,symtable:st,filename:fn,src:src||""}).js; }

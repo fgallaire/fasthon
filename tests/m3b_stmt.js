@@ -1,10 +1,10 @@
 /* wasthonp milestone: FULL statements. wasthonp dumps a whole module to JSON
  * (aligned with $B.ast_classes); the canonical builder rebuilds the $B.ast tree;
  * Brython's codegen compiles it; we compare to Brython's own parser+codegen. */
-const $B = require("./bry_boot.js");
+const $B = require("../bry_boot.js");
 globalThis.$B = $B; globalThis._b_ = $B.builtins;
-const createWasthonp = require("./build/wasthonp_mod.js");
-const WP = require("./wasthonp.js").bind($B);
+const createWasthonp = require("../build/wasthonp_mod.js");
+const WP = require("../wasthonp.js").bind($B);
 const { build } = WP;
 
 function compile(mod, src){
