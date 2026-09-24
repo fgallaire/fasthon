@@ -1,0 +1,93 @@
+name: deploy
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+# Only the deploy job needs Pages write / id-token; the build job just reads
+# the repo (same split as the other repos).
+permissions:
+  contents: read
+
+concurrency:
+  group: pages
+  cancel-in-progress: true
+
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      # The parser is CPython's own frontend compiled to wasm: that needs emsdk
+      # and the CPython source. Brython comes from the wasthon repo, which ships
+      # it already built. build.sh and the harnesses read both from ../ .
+      - name: Cache toolchain and sources
+        uses: actions/cache@v4
+        with:
+          path: |
+            ../external
+            ../loader
+          key: deps-${{ hashFiles('build.sh') }}
+          restore-keys: |
+            deps-
+
+      - name: Install emsdk, fetch CPython source and Brython
+        run: |
+          set -euo pipefail
+          EXT="$(cd .. && pwd)/external"
+          mkdir -p "$EXT"
+          if [ ! -x "$EXT/emsdk/emsdk" ]; then
+            git clone --depth 1 https://github.com/emscripten-core/emsdk.git "$EXT/emsdk"
+            ( cd "$EXT/emsdk" && ./emsdk install 5.0.7 && ./emsdk activate 5.0.7 )
+          fi
+          if [ ! -d "$EXT/Python-3.14.6" ]; then
+            curl -sSL https://www.python.org/ftp/python/3.14.6/Python-3.14.6.tgz \
+              | tar -xz -C "$EXT"
+          fi
+          if [ ! -f "$(cd .. && pwd)/loader/brython/brython.js" ]; then
+            git clone --depth 1 https://github.com/fgallaire/wasthon.git /tmp/wasthon
+            mkdir -p ../loader
+            cp -r /tmp/wasthon/loader/brython ../loader/brython
+          fi
+
+      - name: Build wasthonp_mod.{js,wasm}
+        run: ./build.sh
+
+      # Every file of the CPython stdlib must parse, and the AST must match
+      # Brython's: the check the repo ships.
+      - name: Full-stdlib round-trip
+        run: node tests/validate2.js
+
+      # web/index.html loads ./loader/brython/*.js, ../build/wasthonp_mod.js and
+      # ../wasthonp.js: lay the site out accordingly, / on the demo.
+      - name: Stage site
+        run: |
+          mkdir -p _site/web/loader _site/build
+          cp web/index.html _site/web/
+          cp build/wasthonp_mod.js build/wasthonp_mod.wasm _site/build/
+          cp wasthonp.js _site/
+          cp -r ../loader/brython _site/web/loader/brython
+          printf '<!doctype html><meta http-equiv="refresh" content="0; url=web/">' > _site/index.html
+
+      - name: Upload Pages artifact
+        uses: actions/upload-pages-artifact@v3
+        with:
+          path: _site
+
+  deploy:
+    needs: build
+    runs-on: ubuntu-latest
+    permissions:
+      pages: write
+      id-token: write
+    environment:
+      name: github-pages
+      url: ${{ steps.deployment.outputs.page_url }}
+    steps:
+      - name: Deploy to GitHub Pages
+        id: deployment
+        uses: actions/deploy-pages@v4
