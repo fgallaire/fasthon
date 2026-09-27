@@ -1,7 +1,7 @@
-/* parse-only benchmark: wasthonp (WASM CPython parser) vs Brython's JS parser. */
+/* parse-only benchmark: Fasthon (WASM CPython parser) vs Brython's JS parser. */
 const $B = require("../bry_boot.js");
 globalThis.$B = $B; globalThis._b_ = $B.builtins;
-const createWasthonp = require("../build/wasthonp_mod.js");
+const createFasthon = require("../build/fasthon_mod.js");
 
 // a realistic-ish module body (statements + expressions)
 const SRC = `
@@ -35,16 +35,16 @@ function bench(name, fn, iters){
   return ms/iters;
 }
 
-createWasthonp().then(M => {
-  const parseW = M.cwrap("wasthonp_parse_only","number",["string"]);
-  if (parseW(SRC) <= 0) { console.log("wasthonp failed to parse the bench source!"); return; }
+createFasthon().then(M => {
+  const parseW = M.cwrap("fasthon_parse_only","number",["string"]);
+  if (parseW(SRC) <= 0) { console.log("Fasthon failed to parse the bench source!"); return; }
 
   const N = 200;
   console.log(`\nparse-only benchmark — ${SRC.length} chars, ${N} iterations\n`);
-  const w = bench("wasthonp (WASM)", () => parseW(SRC), N);
+  const w = bench("Fasthon (WASM)", () => parseW(SRC), N);
   const b = bench("Brython (JS parser)", () => {
       const p = new $B.Parser(SRC, "<b>", "file");
       $B._PyPegen.run_parser(p);
     }, N);
-  console.log(`\n  → wasthonp is ${(b/w).toFixed(2)}x ${b>w?"faster":"slower"} than Brython's parser on this input`);
+  console.log(`\n  → Fasthon is ${(b/w).toFixed(2)}x ${b>w?"faster":"slower"} than Brython's parser on this input`);
 });

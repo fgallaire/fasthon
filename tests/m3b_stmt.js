@@ -1,10 +1,10 @@
-/* wasthonp milestone: FULL statements. wasthonp dumps a whole module to JSON
+/* Fasthon milestone: FULL statements. Fasthon dumps a whole module to JSON
  * (aligned with $B.ast_classes); the canonical builder rebuilds the $B.ast tree;
  * Brython's codegen compiles it; we compare to Brython's own parser+codegen. */
 const $B = require("../bry_boot.js");
 globalThis.$B = $B; globalThis._b_ = $B.builtins;
-const createWasthonp = require("../build/wasthonp_mod.js");
-const WP = require("../wasthonp.js").bind($B);
+const createFasthon = require("../build/fasthon_mod.js");
+const WP = require("../fasthon.js").bind($B);
 const { build } = WP;
 
 function compile(mod, src){
@@ -19,7 +19,7 @@ function compile(mod, src){
 function logic(js){ return js
   .replace(/([A-Za-z_])\d{4,}/g,"$1N")
   .replace(/'<string>'/g,"'F'").replace(/'undefined'/g,"'F'")  // Brython's filename is inconsistent in sub-scopes
-  .replace(/set_lineno\(frame, \d+\)/g,"set_lineno(frame, L)")  // traceback line metadata; Brython mis-numbers match_case (assigns the NEXT case's line) — wasthonp is correct here
+  .replace(/set_lineno\(frame, \d+\)/g,"set_lineno(frame, L)")  // traceback line metadata; Brython mis-numbers match_case (assigns the NEXT case's line) — Fasthon is correct here
   .split("\n").map(l=>l.trim()).filter(Boolean).join("\n"); }
 
 const SRC = `def fib(n):
@@ -109,13 +109,13 @@ def first[T](xs: list[T]) -> T:
 `,
 };
 
-createWasthonp().then(M => {
-  const dumpMod = M.cwrap("wasthonp_dump_module","string",["string"]);
+createFasthon().then(M => {
+  const dumpMod = M.cwrap("fasthon_dump_module","string",["string"]);
   let pass=0, total=0;
   for (const [name, src] of Object.entries(CASES)) {
     total++;
     const json = dumpMod(src);
-    if (json.startsWith('{"error')) { console.log(`✗ ${name}: wasthonp ${json}`); continue; }
+    if (json.startsWith('{"error')) { console.log(`✗ ${name}: Fasthon ${json}`); continue; }
     let jsA, jsB, mod;
     try {
       mod = build(JSON.parse(json));
@@ -128,5 +128,5 @@ createWasthonp().then(M => {
     else { const A=logic(jsA).split("\n"),B=logic(jsB).split("\n");
       for(let i=0;i<Math.max(A.length,B.length);i++) if(A[i]!==B[i]){ console.log(`    first diff @${i}\n    A: ${A[i]}\n    B: ${B[i]}`); break; } }
   }
-  console.log(`\n${pass}/${total} real modules: wasthonp AST → codegen logic-identical to Brython`);
+  console.log(`\n${pass}/${total} real modules: Fasthon AST → codegen logic-identical to Brython`);
 });

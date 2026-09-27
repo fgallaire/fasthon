@@ -1,24 +1,26 @@
 #!/usr/bin/env bash
 #
-# Build wasthonp — CPython's parser frontend (tokenizer + PEG → AST) to WASM,
+# Build Fasthon — CPython's parser frontend (tokenizer + PEG → AST) to WASM,
 # a drop-in for Brython's JS parser. Strategy C: the parser keeps its own
 # minimal ABI-correct str/bytes (shims/) and carries literals as source spans;
 # the JS side rebuilds Brython AST objects. No eval loop, no object layer.
 #
-# Output: build/wasthonp_mod.{js,wasm} (CommonJS, EXPORT_NAME=createWasthonp) —
-# used by the node harnesses (bench/validate/...) and loader/wasthonp.html.
+# Output: build/fasthon_mod.{js,wasm} (CommonJS, EXPORT_NAME=createFasthon) —
+# used by the node harnesses (bench/validate/...) and loader/index.html.
 #
-# Reuses the wasthon checkout's emsdk + CPython source under ../external.
+# emsdk and the CPython 3.14.6 source live outside the repo, in ../external
+# ($EMSDK / $CPYTHON_SRC override).
 # The cross pyconfig.h is committed (cpy-build/pyconfig.h); regenerate via the
 # emconfigure dance in BUILD_NOTES.md only if bumping the CPython version.
 set -uo pipefail
 REPO="$(cd "$(dirname "$0")" && pwd)"
-W4="$(cd "${REPO}/.." && pwd)"
-# emsdk and the CPython source come from the wasthon checkout: next to this
-# repo (what the CI stages), or in ../wasthon4 (a dev checkout next door).
-[ -d "${W4}/external" ] || [ ! -d "${W4}/wasthon4/external" ] || W4="${W4}/wasthon4"
-CPY="${CPYTHON_SRC:-${W4}/external/Python-3.14.6}"
-EMSDK="${EMSDK:-${W4}/external/emsdk}"
+UP="$(cd "${REPO}/.." && pwd)"
+# emsdk and the CPython source: ../external, next to this repo (what the CI
+# stages), else ../wasthon4/external (a dev checkout next door).
+EXT="${UP}/external"
+[ -d "${EXT}" ] || [ ! -d "${UP}/wasthon4/external" ] || EXT="${UP}/wasthon4/external"
+CPY="${CPYTHON_SRC:-${EXT}/Python-3.14.6}"
+EMSDK="${EMSDK:-${EXT}/emsdk}"
 OUT="${REPO}/build"
 mkdir -p "${OUT}"
 source "${EMSDK}/emsdk_env.sh" >/dev/null 2>&1
@@ -49,21 +51,15 @@ for s in pod_real pod_stubs ast_dump wp_errors; do
     && echo "  ok  shims/${s}.c" || { echo "  FAIL shims/${s}.c"; tail -12 "${OUT}/compile.log"; exit 1; }
 done
 
-echo "=== link build/wasthonp_mod.js (CommonJS) ==="
+echo "=== link build/fasthon_mod.js (CommonJS) ==="
 OBJS="$(ls "${OUT}"/*.o)"
-EXP='-s EXPORTED_FUNCTIONS=["_wasthonp_dump","_wasthonp_dump_module","_wasthonp_parse_only","_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=["ccall","cwrap","UTF8ToString","stringToUTF8","lengthBytesUTF8"]'
+EXP='-s EXPORTED_FUNCTIONS=["_fasthon_dump","_fasthon_dump_module","_fasthon_parse_only","_malloc","_free"] -s EXPORTED_RUNTIME_METHODS=["ccall","cwrap","UTF8ToString","stringToUTF8","lengthBytesUTF8"]'
 emcc -O2 ${OBJS} \
      -Wl,--wrap=_PyPegen_raise_error_known_location \
      -Wl,--wrap=_PyTokenizer_syntaxerror \
      -Wl,--wrap=_PyTokenizer_syntaxerror_known_range \
      -s ALLOW_MEMORY_GROWTH=1 -s STACK_SIZE=8MB -s MODULARIZE=1 \
-     -s EXPORT_NAME=createWasthonp -s INVOKE_RUN=0 ${EXP} \
-     -o "${OUT}/wasthonp_mod.js" 2>"${OUT}/link.log" \
-  && echo "Built: build/wasthonp_mod.{js,wasm}  ($(stat -c%s "${OUT}/wasthonp_mod.wasm") B wasm)" \
+     -s EXPORT_NAME=createFasthon -s INVOKE_RUN=0 ${EXP} \
+     -o "${OUT}/fasthon_mod.js" 2>"${OUT}/link.log" \
+  && echo "Built: build/fasthon_mod.{js,wasm}  ($(stat -c%s "${OUT}/fasthon_mod.wasm") B wasm)" \
   || { echo "LINK FAIL"; tail -20 "${OUT}/link.log"; exit 1; }
-
-# Stage the artifacts + the JS glue into the repo-root build/ — the directory
-# the Pages site serves (loader/wasthonp.html loads ../build/wasthonp_mod.js);
-# the local build/ above keeps serving the node harnesses.
-mkdir -p "${W4}/build"
-cp "${OUT}/wasthonp_mod.js" "${OUT}/wasthonp_mod.wasm" "${REPO}/wasthonp.js" "${W4}/build/"

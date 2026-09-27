@@ -1,19 +1,19 @@
-/* wasthonp.js — canonical drop-in glue between the wasthonp WASM parser and
- * Brython. Converts wasthonp's JSON AST to a $B.ast tree and hooks
- * $B._PyPegen.run_parser so Brython parses Python with wasthonp.
+/* fasthon.js — canonical drop-in glue between the Fasthon WASM parser and
+ * Brython. Converts Fasthon's JSON AST to a $B.ast tree and hooks
+ * $B._PyPegen.run_parser so Brython parses Python with Fasthon.
  *
  * Environment-agnostic (UMD): require() in node, <script src> global in the
- * browser (exposes `window.wasthonp`).
+ * browser (exposes `window.fasthon`).
  *
- *   const wp = wasthonp.bind($B);          // bind to a Brython instance
- *   const M  = await createWasthonp();     // the wasthonp WASM module
+ *   const wp = Fasthon.bind($B);          // bind to a Brython instance
+ *   const M  = await createFasthon();     // the Fasthon WASM module
  *   const ctl = wp.install(M);             // patch $B._PyPegen.run_parser
  *   ctl.enable();  ...run Python...  ctl.disable();
  *   wp.build(jsonAst)                      // JSON node → $B.ast node
  */
 (function (root, factory) {
   if (typeof module === 'object' && module.exports) module.exports = factory();
-  else root.wasthonp = factory();
+  else root.fasthon = factory();
 }(typeof self !== 'undefined' ? self : this, function () {
   'use strict';
 
@@ -120,16 +120,16 @@
       return setpos(new ast[j._type](...fields.map(f=>build(j[f]))), j);
     }
 
-    // Patch $B._PyPegen.run_parser to parse with wasthonp module M.
-    //   opts.fallback (default true): on a wasthonp parse error, fall back to
+    // Patch $B._PyPegen.run_parser to parse with Fasthon module M.
+    //   opts.fallback (default true): on a Fasthon parse error, fall back to
     //   Brython's parser; if false, the error is thrown (used by validators).
     // Returns a controller: { enable(), disable(), lastParser, origRun,
     //                         dumpMod, dumpExpr }.
     function install(M, opts){
       opts = opts || {};
       const fallback = opts.fallback !== false;
-      const dumpMod  = M.cwrap("wasthonp_dump_module","string",["string"]);
-      const dumpExpr = M.cwrap("wasthonp_dump","string",["string"]);
+      const dumpMod  = M.cwrap("fasthon_dump_module","string",["string"]);
+      const dumpExpr = M.cwrap("fasthon_dump","string",["string"]);
       const origRun = $B._PyPegen.run_parser;
       const ctl = { enabled:false, lastParser:"", origRun, dumpMod, dumpExpr };
       $B._PyPegen.run_parser = function(parser){
@@ -139,16 +139,16 @@
           catch(e){ if(!fallback) throw e; }   // wasm crash → fall back to Brython
           if(json !== null){
             if(!json.startsWith('{"error')){
-              ctl.lastParser = "wasthonp (WASM CPython parser)";
+              ctl.lastParser = "Fasthon (WASM CPython parser)";
               const tree = JSON.parse(json);
               return parser.mode==='eval' ? setpos(new ast.Expression(build(tree)), tree) : build(tree);
             }
-            // wasthonp returned an error
+            // Fasthon returned an error
             let parsed = null; try{ parsed = JSON.parse(json); }catch(_){}
             if(parsed && parsed.error && typeof parsed.error === 'object'){
               // a real SyntaxError caught by the CPython parser — raise the
               // faithful Brython exception (message+position from C); propagates.
-              ctl.lastParser = "wasthonp (WASM CPython parser)";
+              ctl.lastParser = "Fasthon (WASM CPython parser)";
               const e = parsed.error;
               const lines = parser.src.split('\n');
               const line = lines[e.lineno-1] || "";
@@ -166,8 +166,8 @@
               $B.raise_error_known_location(et, parser.filename, e.lineno, col,
                   endLineNo, endcol, line, e.msg);
             }
-            // a wasthonp internal limitation (not a syntax error) → fall back
-            if(!fallback) throw new Error("wasthonp parse: "+json.slice(0,90));
+            // a Fasthon internal limitation (not a syntax error) → fall back
+            if(!fallback) throw new Error("Fasthon parse: "+json.slice(0,90));
           }
         }
         ctl.lastParser = "Brython (JS parser)";

@@ -1,4 +1,4 @@
-/* wasthonp: walk the parsed mod_ty → JSON aligned with Brython's $B.ast_classes,
+/* Fasthon: walk the parsed mod_ty → JSON aligned with Brython's $B.ast_classes,
  * so the JS side rebuilds the $B.ast tree with ONE generic constructor.
  * No object layer: identifiers via the real minimal str, literals via the
  * source span, positions emitted so Brython codegen matches exactly.
@@ -209,7 +209,7 @@ static void d_type_param(type_param_ty t){
 }
 static void f_tpseq(const char *n, asdl_type_param_seq *s){ f_node_open(n); raw("["); Py_ssize_t N=asdl_seq_LEN(s); for(Py_ssize_t i=0;i<N;i++){ if(i)raw(","); d_type_param((type_param_ty)asdl_seq_GET(s,i)); } raw("]"); }
 
-int wasthonp_parse_only(const char *src){
+int fasthon_parse_only(const char *src){
     PyArena *arena=_PyArena_New(); if(!arena) return -1;
     PyObject *fn=PyUnicode_FromString("<w>");
     mod_ty mod=_PyPegen_run_parser_from_string(src,Py_file_input,fn,NULL,arena);
@@ -219,7 +219,7 @@ int wasthonp_parse_only(const char *src){
 }
 
 /* dump a whole module (file input) */
-const char *wasthonp_dump_module(const char *src){
+const char *fasthon_dump_module(const char *src){
     wp_error_reset(); LEN=0; BUF[0]=0; SRC=src; build_lineoff(src);
     PyArena *arena=_PyArena_New(); if(!arena) return "{\"error\":\"arena\"}";
     PyObject *fn=PyUnicode_FromString("<w>");
@@ -241,7 +241,7 @@ const char *wasthonp_dump_module(const char *src){
 }
 
 /* expression dump kept for the old demo */
-const char *wasthonp_dump(const char *src){
+const char *fasthon_dump(const char *src){
     wp_error_reset(); LEN=0; BUF[0]=0; SRC=src; build_lineoff(src);
     PyArena *arena=_PyArena_New(); if(!arena) return "{\"error\":\"arena\"}";
     PyObject *fn=PyUnicode_FromString("<w>");

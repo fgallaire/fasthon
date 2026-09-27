@@ -1,4 +1,4 @@
-/* Node boot for Brython's parser/codegen — used by the wasthonp harnesses
+/* Node boot for Brython's parser/codegen — used by the Fasthon harnesses
    (bench.js, validate2.js, superiority.js, m3b_stmt.js, m3c_exec.js).
    Loads the vendored brython.js with light DOM stubs so $B.Parser /
    $B._PyPegen / $B.py2js / $B.ast are available in node. */
@@ -22,17 +22,17 @@ if (typeof globalThis.document === 'undefined') {
     location: globalThis.location,
   };
 }
-// Brython comes from the wasthon checkout, which ships it already built:
-// $BRYTHON_JS wins, then ../loader/brython (what the CI stages), then
+// Brython comes from the wasthon repo, which ships it already built:
+// $BRYTHON_JS wins, then loader/brython (what the CI copies in), then
 // ../wasthon4/loader/brython (a dev checkout next door).
 const _p = require('path'), _fs = require('fs');
 const _bry = [process.env.BRYTHON_JS,
-              _p.join(__dirname, '../loader/brython/brython.js'),
+              _p.join(__dirname, 'loader/brython/brython.js'),
               _p.join(__dirname, '../wasthon4/loader/brython/brython.js')]
     .find(f => f && _fs.existsSync(f));
 if (! _bry) {
-    throw new Error('brython.js not found: set BRYTHON_JS, or put the wasthon ' +
-                    'checkout next to this repo');
+    throw new Error('brython.js not found: set BRYTHON_JS, or copy the wasthon ' +
+                    "repo's loader/brython into loader/");
 }
 require(_bry);
 module.exports = globalThis.__BRYTHON__;

@@ -1,4 +1,4 @@
-# wasthonp — build notes & dependency audit
+# Fasthon — build notes & dependency audit
 
 ## Toolchain bring-up (day 0)
 
@@ -44,19 +44,19 @@ the frontend is self-contained at the source level.
   by the emscripten sysroot at the final link, not a real gap.
 - **165 are Py-level symbols.**
 
-Cross-referencing those 165 against the **wasthon bridge** (`../wasthon/src/
-wasthon.js` + `wasthon.c` + `wasthon.h`):
+Cross-referencing those 165 against the **[wasthon](https://github.com/fgallaire/wasthon)
+bridge** (`src/wasthon.js` + `wasthon.c` + `wasthon.h`):
 
 | | count |
 |---|---|
 | Py-level symbols the parser needs | **165** |
 | **already implemented by the wasthon bridge** | **109 (66%)** |
-| **gap wasthonp must add** | **56** |
+| **gap Fasthon must add** | **56** |
 
 ### What this means (architecture)
 
 The audit **revives Strategy B**: rather than compiling `Objects/*.c` (the heavy,
-Pyodide-ward path), wasthonp can **link the parser against the existing wasthon
+Pyodide-ward path), Fasthon can **link the parser against the existing wasthon
 bridge** for the object layer (str/bytes/long/float/list/tuple/dict/set/type,
 PyErr_*, PyMem_*, …). Only **56 symbols** remain, and they're tractable:
 
@@ -91,7 +91,7 @@ Two hard findings, in order.
 
 ### (1) Strategy B (reuse the bridge) is blocked by ABI
 
-`../wasthon/src/wasthon.h` defines `struct _object { intptr_t ob_refcnt; }` —
+wasthon's `src/wasthon.h` defines `struct _object { intptr_t ob_refcnt; }` —
 **one field, no `ob_type`** (`PyObject_HEAD` is 4 bytes, `Py_TYPE` is a function
 call, not a struct read). Real CPython's `PyObject` head is `{ob_refcnt;
 ob_type}` = 8 bytes. The parser is compiled with **real** CPython headers, so it
@@ -201,8 +201,8 @@ parse(x)         -> kind=3   parse(1)        -> kind=3
 parse(3.14)      -> kind=3   parse(1+2*3)    -> kind=3
 parse(f(a, b))   -> kind=3   parse([1, 2, 3])-> kind=3
 ```
-(`kind==3` = `Expression_kind`; `mod_ty` non-NULL.) **234 KB** `wasthonp.wasm`
-at -O2 (`node build/wasthonp.js`), vs Pyodide's ~10 MB.
+(`kind==3` = `Expression_kind`; `mod_ty` non-NULL.) **234 KB** `fasthon.wasm`
+at -O2 (`node build/fasthon.js`), vs Pyodide's ~10 MB.
 
 What it took (the real runtime-critical surface, ~40 functions in
 `shims/pod_real.c`):
@@ -222,7 +222,7 @@ What it took (the real runtime-critical surface, ~40 functions in
   so the tokenizer classified every number as an `OP` token (type 55) and the
   grammar rejected all numeric literals.
 
-### What this proves (and the honest gap to a real wasthonp)
+### What this proves (and the honest gap to a real Fasthon)
 
 Proven: **the CPython parser is separable from the interpreter** — it produces a
 real `mod_ty` for real source in a ~234 KB WASM, no eval/object-layer/runtime.
@@ -230,7 +230,7 @@ The "you can't take a little bit of CPython" claim is **false for the frontend**
 once you supply the small classification tables + minimal str/bytes.
 
 Still hybrid, not the final design: numeric leaves are opaque (fine to store,
-but their *value* isn't real). A production wasthonp would either (a) keep these
+but their *value* isn't real). A production Fasthon would either (a) keep these
 minimal compat str/bytes and **serialize the AST** reading their bytes directly
 (re-parsing numbers in JS from the source span), or (b) finish the POD-AST
 surgery. Either way the architecture question is now answered: **small is
@@ -248,7 +248,7 @@ those objects is bridge-compatible:
 - `Py_INCREF/DECREF` patterns must agree with the bridge's refcount model.
 
 That's exactly milestone 2: link against the bridge, implement the 56 gap
-shims, and parse one expression. If the ABI holds, wasthonp is a **weekend-scale**
+shims, and parse one expression. If the ABI holds, Fasthon is a **weekend-scale**
 project, not a Pyodide-scale one.
 
 ## Reproduce

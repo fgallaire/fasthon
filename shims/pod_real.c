@@ -1,4 +1,4 @@
-/* wasthonp Strategy-C: real-signature shims for the C-API surface actually
+/* Fasthon Strategy-C: real-signature shims for the C-API surface actually
  * exercised while parsing a simple expression. Backed by libc malloc with a
  * pinned-high refcount so the parser's Py_INCREF/DECREF are harmless — no real
  * CPython object layer, no eval loop, no runtime. This is the experiment that
@@ -36,12 +36,12 @@ PyTypeObject PyUnicode_Type = {
     .tp_name = "str",
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_UNICODE_SUBCLASS,
 };
-#define wasthonp_str_type PyUnicode_Type
+#define fasthon_str_type PyUnicode_Type
 static PyObject *mkstr(const char *s, Py_ssize_t n) {
     if (n < 0) n = s ? (Py_ssize_t)strlen(s) : 0;
     PyASCIIObject *o = (PyASCIIObject*)calloc(1, sizeof(PyASCIIObject) + n + 1);
     o->ob_base.ob_refcnt = (Py_ssize_t)1 << 30;
-    o->ob_base.ob_type   = &wasthonp_str_type;
+    o->ob_base.ob_type   = &fasthon_str_type;
     /* length must be the CODE-POINT count (not byte count) so PyUnicode_GET_LENGTH
      * is right; the escape decoder sizes its buffer from it (byte count would
      * overflow for non-ASCII content). Data stays the UTF-8 bytes. */
@@ -66,12 +66,12 @@ PyTypeObject PyBytes_Type = {
     .tp_name = "bytes",
     .tp_flags = Py_TPFLAGS_DEFAULT | Py_TPFLAGS_BYTES_SUBCLASS,
 };
-#define wasthonp_bytes_type PyBytes_Type
+#define fasthon_bytes_type PyBytes_Type
 static PyObject *mkbytes(const char *s, Py_ssize_t n) {
     if (n < 0) n = s ? (Py_ssize_t)strlen(s) : 0;
     PyBytesObject *o = (PyBytesObject*)calloc(1, sizeof(PyBytesObject) + n + 1);
     o->ob_base.ob_base.ob_refcnt = (Py_ssize_t)1 << 30;
-    o->ob_base.ob_base.ob_type   = &wasthonp_bytes_type;
+    o->ob_base.ob_base.ob_type   = &fasthon_bytes_type;
     o->ob_base.ob_size = n;
     o->ob_shash = -1;
     if (s && n) memcpy(o->ob_sval, s, n);

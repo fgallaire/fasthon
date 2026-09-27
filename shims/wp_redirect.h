@@ -1,4 +1,4 @@
-/* auto-genere: namespace C-API POD de wasthonp en wp_* (link unique). */
+/* auto-genere: namespace C-API POD de Fasthon en wp_* (link unique). */
 #ifndef WP_REDIRECT_H
 #define WP_REDIRECT_H
 #define PyBaseObject_Type wp_PyBaseObject_Type

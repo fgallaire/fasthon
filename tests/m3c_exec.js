@@ -1,9 +1,9 @@
-/* wasthonp END-TO-END EXECUTION: parse with wasthonp (WASM) → $B.ast →
+/* Fasthon END-TO-END EXECUTION: parse with Fasthon (WASM) → $B.ast →
  * Brython's exec → read the result. Proves programs actually RUN correctly via
- * wasthonp's parser, not just that the codegen text matches. */
+ * Fasthon's parser, not just that the codegen text matches. */
 const $B = require("../bry_boot.js");
 globalThis.$B = $B; globalThis._b_ = $B.builtins;
-const createWasthonp = require("../build/wasthonp_mod.js");
+const createFasthon = require("../build/fasthon_mod.js");
 const ast = $B.ast;
 
 // 1) decode a single Python string literal → its REAL runtime value
@@ -84,15 +84,15 @@ function build(j){
   return setpos(new ast[j._type](...fields.map(f=>build(j[f]))), j);
 }
 
-createWasthonp().then(M => {
-  const dumpMod = M.cwrap("wasthonp_dump_module","string",["string"]);
+createFasthon().then(M => {
+  const dumpMod = M.cwrap("fasthon_dump_module","string",["string"]);
   // establish a root Brython frame (no module is running in node)
   const rootns = { __name__: "__main__", __builtins__: _b_.__builtins__ };
   $B.enter_frame(["__main__", rootns, "__main__", rootns], "<root>", 1);
 
   function run(src, resultVar){
-    const tree = build(JSON.parse(dumpMod(src)));         // wasthonp WASM → $B.ast
-    const code = { ob_type: $B.code, mode:"exec", filename:"<wasthonp>", src, _ast:{ $js_ast: tree } };
+    const tree = build(JSON.parse(dumpMod(src)));         // Fasthon WASM → $B.ast
+    const code = { ob_type: $B.code, mode:"exec", filename:"<fasthon>", src, _ast:{ $js_ast: tree } };
     const G = $B.empty_dict();
     _b_.exec(code, G, _b_.None);                          // Brython runs it
     const v = $B.$getitem(G, resultVar);                  // read the result var
@@ -152,5 +152,5 @@ result = list(map(add5, [1, 2, 3]))`, "result", "[6, 7, 8]"],
     console.log(`${ok?"✅":"✗"} ${name}  → ${rv} = ${got}${ok?"":"  (expected "+expect+")"}`);
     if (ok) pass++;
   }
-  console.log(`\n${pass}/${CASES.length} programs RAN correctly via wasthonp's parser → Brython exec`);
+  console.log(`\n${pass}/${CASES.length} programs RAN correctly via Fasthon's parser → Brython exec`);
 });

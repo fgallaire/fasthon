@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 <meta charset="utf-8">
-<title>wasthonp — CPython parser (WASM) driving Brython</title>
+<title>Fasthon — CPython parser (WASM) driving Brython</title>
 <style>
   body{font:14px/1.5 system-ui,sans-serif;max-width:900px;margin:1.5em auto;padding:0 1em;color:#222}
   h1{font-size:1.4em} .sub{color:#666;margin-top:-.6em}
@@ -15,7 +15,7 @@
 </style>
 </head>
 <body>
-<h1>wasthonp <span class="badge" id="status">loading…</span></h1>
+<h1>Fasthon <span class="badge" id="status">loading…</span></h1>
 <p class="sub">CPython's real PEG parser, compiled to WebAssembly (~300&nbsp;KB), driving Brython's code generator — a drop-in for Brython's own JS parser.</p>
 
 <textarea id="src">
@@ -31,7 +31,7 @@ class Greeter:
 squares = [x*x for x in range(8)]
 print("fib(15) =", fib(15))
 print("squares =", squares)
-print(Greeter("wasthonp").hi())
+print(Greeter("Fasthon").hi())
 
 match (1, 2):
     case (a, b) if a < b:
@@ -40,7 +40,7 @@ match (1, 2):
         print("other")
 </textarea>
 <div>
-  <button id="run">▶ Run with wasthonp</button>
+  <button id="run">▶ Run with Fasthon</button>
   <button id="bench">⏱ Parse-time vs Brython</button>
 </div>
 
@@ -49,17 +49,17 @@ match (1, 2):
   <div><h3>How it ran</h3><pre id="info"></pre></div>
 </div>
 
-<script src="./loader/brython/brython.js"></script>
-<script src="./loader/brython/brython_stdlib.js"></script>
-<script src="../build/wasthonp_mod.js"></script>
-<script src="../wasthonp.js"></script>
+<script src="./brython/brython.js"></script>
+<script src="./brython/brython_stdlib.js"></script>
+<script src="../build/fasthon_mod.js"></script>
+<script src="../fasthon.js"></script>
 <script type="module">
 const $B = window.__BRYTHON__;
 const out = document.getElementById('out'), info = document.getElementById('info'), status = document.getElementById('status');
 
-// the whole drop-in (JSON AST → $B.ast + run_parser hook) lives in wasthonp.js
-const wp = window.wasthonp.bind($B);
-const M = await createWasthonp();
+// the whole drop-in (JSON AST → $B.ast + run_parser hook) lives in fasthon.js
+const wp = window.fasthon.bind($B);
+const M = await createFasthon();
 const ctl = wp.install(M);          // fallback to Brython on parse error
 
 status.textContent = "ready — WASM parser loaded";
@@ -77,13 +77,13 @@ document.getElementById('run').onclick = () => {
   const src = document.getElementById('src').value;
   ctl.enable(); ctl.lastParser = "";
   let t0 = performance.now(), printed, err=null;
-  try { printed = withCapture(() => $B.runPythonSource(src, "wasthonp_demo_"+Date.now())); }
+  try { printed = withCapture(() => $B.runPythonSource(src, "fasthon_demo_"+Date.now())); }
   catch(e){ err = e; printed = ""; }
   finally { ctl.disable(); }
   const ms = (performance.now()-t0).toFixed(1);
   out.textContent = (printed||"(no output)") + (err ? "\n[error] "+(err.message||err) : "");
   info.innerHTML = `parser: <b class="ok">${ctl.lastParser}</b>\n`+
-    `pipeline: source → wasthonp(WASM) → \$B.ast → Brython codegen → eval\n`+
+    `pipeline: source → Fasthon(WASM) → \$B.ast → Brython codegen → eval\n`+
     `total run: <b>${ms} ms</b>`;
 };
 
@@ -91,7 +91,7 @@ document.getElementById('bench').onclick = () => {
   const src = document.getElementById('src').value, N=300;
   let t=performance.now(); for(let i=0;i<N;i++) ctl.dumpMod(src); const w=(performance.now()-t)/N;
   t=performance.now(); for(let i=0;i<N;i++){ const p=new $B.Parser(src,"<b>","file"); ctl.origRun.call($B._PyPegen,p);} const b=(performance.now()-t)/N;
-  info.innerHTML = `parse-only, ${N}×:\n  wasthonp: <b>${w.toFixed(3)} ms</b>\n  Brython:  <b>${b.toFixed(3)} ms</b>\n  → wasthonp <b class="t">${(b/w).toFixed(1)}× faster</b>`;
+  info.innerHTML = `parse-only, ${N}×:\n  Fasthon: <b>${w.toFixed(3)} ms</b>\n  Brython:  <b>${b.toFixed(3)} ms</b>\n  → Fasthon <b class="t">${(b/w).toFixed(1)}× faster</b>`;
 };
 </script>
 </body>

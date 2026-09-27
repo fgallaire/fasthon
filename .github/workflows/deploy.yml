@@ -24,13 +24,14 @@ jobs:
 
       # The parser is CPython's own frontend compiled to wasm: that needs emsdk
       # and the CPython source. Brython comes from the wasthon repo, which ships
-      # it already built. build.sh and the harnesses read both from ../ .
+      # it already built. build.sh and the harnesses read the toolchain and the
+      # source from ../external, Brython from loader/brython.
       - name: Cache toolchain and sources
         uses: actions/cache@v4
         with:
           path: |
             ../external
-            ../loader
+            loader/brython
           key: deps-${{ hashFiles('build.sh') }}
           restore-keys: |
             deps-
@@ -48,13 +49,12 @@ jobs:
             curl -sSL https://www.python.org/ftp/python/3.14.6/Python-3.14.6.tgz \
               | tar -xz -C "$EXT"
           fi
-          if [ ! -f "$(cd .. && pwd)/loader/brython/brython.js" ]; then
+          if [ ! -f loader/brython/brython.js ]; then
             git clone --depth 1 https://github.com/fgallaire/wasthon.git /tmp/wasthon
-            mkdir -p ../loader
-            cp -r /tmp/wasthon/loader/brython ../loader/brython
+            cp -r /tmp/wasthon/loader/brython loader/brython
           fi
 
-      - name: Build wasthonp_mod.{js,wasm}
+      - name: Build fasthon_mod.{js,wasm}
         run: ./build.sh
 
       # Every file of the CPython stdlib must parse, and the AST must match
@@ -62,16 +62,16 @@ jobs:
       - name: Full-stdlib round-trip
         run: node tests/validate2.js
 
-      # web/index.html loads ./loader/brython/*.js, ../build/wasthonp_mod.js and
-      # ../wasthonp.js: lay the site out accordingly, / on the demo.
+      # loader/index.html loads ./brython/*.js, ../build/fasthon_mod.js and
+      # ../fasthon.js: lay the site out accordingly, / on the demo.
       - name: Stage site
         run: |
-          mkdir -p _site/web/loader _site/build
-          cp web/index.html _site/web/
-          cp build/wasthonp_mod.js build/wasthonp_mod.wasm _site/build/
-          cp wasthonp.js _site/
-          cp -r ../loader/brython _site/web/loader/brython
-          printf '<!doctype html><meta http-equiv="refresh" content="0; url=web/">' > _site/index.html
+          mkdir -p _site/loader _site/build
+          cp loader/index.html _site/loader/
+          cp build/fasthon_mod.js build/fasthon_mod.wasm _site/build/
+          cp fasthon.js _site/
+          cp -r loader/brython _site/loader/brython
+          printf '<!doctype html><meta http-equiv="refresh" content="0; url=loader/">' > _site/index.html
 
       - name: Upload Pages artifact
         uses: actions/upload-pages-artifact@v3

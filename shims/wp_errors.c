@@ -1,9 +1,9 @@
-/* wasthonp v2 — error repatriation. CPython's parser funnels every syntax error
+/* Fasthon v2 — error repatriation. CPython's parser funnels every syntax error
  * through _PyPegen_raise_error_known_location, which (1) formats the message via
  * PyUnicode_FromFormatV and (2) builds a SyntaxError object. Building the object
  * would pull in the exception/type/ceval machinery (the monolith we avoid). So
  * we --wrap that funnel: capture the message + position into a struct, set the
- * parser's error_indicator, and let wasthonp_dump serialize it as JSON. The JS
+ * parser's error_indicator, and let fasthon_dump serialize it as JSON. The JS
  * side rebuilds Brython's SyntaxError — same Strategy-C trick as the AST. */
 #include "Python.h"
 #include "internal/pycore_ast.h"
