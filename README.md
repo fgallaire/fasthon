@@ -125,8 +125,9 @@ node and the browser.
 ```sh
 ./build.sh            # → build/fasthon_mod.{js,wasm}  (~300 KB)
 ```
-Reuses the wasthon checkout's emsdk + CPython 3.14 source under `../external`;
-the cross `pyconfig.h` is committed (`cpy-build/`). Then:
+emsdk and the CPython 3.14 source live outside the repo, in `../external`
+(`$EMSDK` / `$CPYTHON_SRC` override); the cross `pyconfig.h` is committed
+(`cpy-build/`). Then:
 
 ```sh
 node tests/bench.js         # parse-speed vs Brython
@@ -136,3 +137,10 @@ node tests/m3c_exec.js      # parse → $B.ast → exec, end to end
 ```
 Browser demo: serve the repo root and open `/loader/index.html` (Brython in
 `loader/brython/`, copied from wasthon as the CI does).
+
+## License
+
+Copyright (C) 2026 Florent Gallaire <fgallaire@gmail.com>
+
+GNU Affero General Public License v3.0 or later. See `LICENSE` for the full
+text and `THIRD_PARTY.md` for the upstream components and their licenses.
